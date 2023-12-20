@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-
-"""This module prints log stats"""
+"""This module provides some stats about Nginx logs stored in MongoDB"""
 
 from pymongo import MongoClient
 
 
 def main():
-    # Connect to MongoDB
+    """ This function connects to MongoDB and prints stats"""
     client = MongoClient("mongodb://localhost:27017")
     db = client.logs
     collection = db.nginx
@@ -16,43 +15,41 @@ def main():
 
     # Count documents by HTTP method
     method_counts = {
-        "GET": collection.count_documents({"method": "GET"}),
-        "POST": collection.count_documents({"method": "POST"}),
-        "PUT": collection.count_documents({"method": "PUT"}),
-        "PATCH": collection.count_documents({"method": "PATCH"}),
-        "DELETE": collection.count_documents({"method": "DELETE"}),
+            "GET": collection.count_documents({"method": "GET"}),
+            "POST": collection.count_documents({"method": "POST"}),
+            "PUT": collection.count_documents({"method": "PUT"}),
+            "PATCH": collection.count_documents({"method": "PATCH"}),
+            "DELETE": collection.count_documents({"method": "DELETE"}),
     }
-
     # Count GET requests for "/status" path
-    status_checks = collection.count_documents({"method": "GET", "path": "/status"})
+    status_checks = collection.count_documents({"method": "GET",
+                                               "path": "/status"})
 
-    # Aggregate top 10 most frequent IPs
-    top_ips = collection.aggregate(
-        [
-            {
-                "$group": {
-                    "_id": "$client_ip",
-                    "count": { "$sum": 1 }
-                }
-            },
-            {
-                "$sort": { "count": -1 }
-            },
-            { "$limit": 10 }  # Limit to top 10 IPs
-        ]
-    )
-
-    # Print output
+    # Prints Results
     print(f"{document_count} logs")
     print("Methods:")
     for method, count in method_counts.items():
         print(f"\tmethod {method}: {count}")
     print(f"{status_checks} status check")
-    print("IPs:")
-    for top_ip in top_ips:
-        ip = top_ip['_id']
-        ip_count = top_ip['count']
-        print('\t{}: {}'.format(ip, ip_count))
+
+    print('IPs:')
+    request_logs = collection.aggregate(
+        [
+            {
+                '$group': {'_id': "$ip", 'totalRequests': {'$sum': 1}}
+            },
+            {
+                '$sort': {'totalRequests': -1}
+            },
+            {
+                '$limit': 10
+            },
+        ]
+    )
+    for request_log in request_logs:
+        ip = request_log['_id']
+        ip_requests_count = request_log['totalRequests']
+        print('\t{}: {}'.format(ip, ip_requests_count))
 
 
 if __name__ == "__main__":
