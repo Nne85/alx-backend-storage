@@ -5,7 +5,7 @@ Exercise file
 
 import redis
 import uuid
-from typing import Union
+from typing import Union, Callable, Any
 
 
 class Cache:
@@ -28,7 +28,8 @@ class Cache:
         # Return the generated key
         return key
 
-    def get(self, key: str, fn: Callable[[bytes], Any] = None) -> Any:
+    def get(self, key: str, fn: Callable =
+            None) -> Union[str, bytes, int, float]:
         """ Retrieve data from Redis based on the provided key"""
         data = self._redis.get(key)
         if data is None:
