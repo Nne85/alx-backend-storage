@@ -6,6 +6,25 @@ Exercise file
 import redis
 import uuid
 from typing import Union, Callable, Any
+from functools import wraps
+
+
+def call_history(method: Callable) -> Callable:
+    @wraps(method)
+    def wrapper(self, *args, **kwargs) -> Any:
+        # Store input arguments using lpush
+        inputs = '{}:inputs'.format(method.__qualname__)
+        outputs = '{}:outputs'.format(method.__qualname__)
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(inputs, str(args))
+
+        # Execute the wrapped function and store output
+        output = method(self, *args, **kwargs)
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(outputs, output)
+
+        return output
+    return wrapper
 
 
 class Cache:
@@ -15,6 +34,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """This function Generate a random key using uuid"""
         key = str(uuid.uuid4())
