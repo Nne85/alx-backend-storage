@@ -47,4 +47,4 @@ class Cache:
 
     def get_int(self, key: int) -> int:
         """Retrieves data as an integer. """
-        return self.get(key, fn=int)
+        return self.get(key, fn=lambda d: int(d))
