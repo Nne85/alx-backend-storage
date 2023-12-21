@@ -45,6 +45,6 @@ class Cache:
         """
         return self.get(key, fn=lambda d: d.decode("utf-8"))
 
-    def get_int(self, key: str) -> int:
+    def get_int(self, key: int) -> int:
         """Retrieves data as an integer. """
         return self.get(key, fn=int)
