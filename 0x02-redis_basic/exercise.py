@@ -8,6 +8,7 @@ import uuid
 from typing import Union, Callable, Any
 from functools import wraps
 
+
 def count_calls(method: Callable) -> Callable:
     """ This function reate and return function that increments the
     count for Cache store"""
@@ -18,6 +19,7 @@ def count_calls(method: Callable) -> Callable:
         self._redis.incr(key)
         return method(self, *args, **kwargs)
     return wrapper
+
 
 def call_history(method: Callable) -> Callable:
     @wraps(method)
@@ -35,6 +37,24 @@ def call_history(method: Callable) -> Callable:
 
         return output
     return wrapper
+
+
+def replay(method: Callable) -> None:
+    """Displays call history for Cache class"""
+    input_key = f"{method.__qualname__}:inputs"
+    output_key = f"{method.__qualname__}:outputs"
+
+    with redis.Redis() as redis_client:
+        """Use a context manager for connection """
+        inputs = redis_client.lrange(input_key, 0, -1)
+        outputs = redis_client.lrange(output_key, 0, -1)
+
+        call_count = len(inputs)
+        print(f"{method.__qualname__} was called {call_count} times:")
+
+        for args, output in zip(inputs, outputs):
+            args_str = ', '.join(f"'{arg}'" for arg in args)
+            print(f"{method.__qualname__}*({args_str}) -> {output}")
 
 
 class Cache:
