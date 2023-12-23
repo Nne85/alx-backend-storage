@@ -22,6 +22,8 @@ def count_calls(method: Callable) -> Callable:
 
 
 def call_history(method: Callable) -> Callable:
+    """ This function stores the history of input and output
+    of the Cache class"""
     @wraps(method)
     def wrapper(self, *args, **kwargs) -> Any:
         # Store input arguments using lpush
