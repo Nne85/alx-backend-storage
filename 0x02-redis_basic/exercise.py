@@ -8,6 +8,16 @@ import uuid
 from typing import Union, Callable, Any
 from functools import wraps
 
+def count_calls(method: Callable) -> Callable:
+    """ This function reate and return function that increments the
+    count for Cache store"""
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        """This method call its self after increment"""
+        key = method.__qualname__
+        self._redis.incr(key)
+        return method(self, *args, **kwargs)
+    return wrapper
 
 def call_history(method: Callable) -> Callable:
     @wraps(method)
@@ -34,6 +44,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """This function Generate a random key using uuid"""
